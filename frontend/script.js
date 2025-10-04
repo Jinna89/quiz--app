@@ -1,4 +1,3 @@
-// ✅ Use your deployed Render backend
 const API_BASE_URL = "https://quiz-app-wbem.onrender.com";
 
 let currentQuestionIndex = 0;
@@ -20,36 +19,30 @@ async function loadQuiz() {
 }
 
 function showQuestion() {
-  const container = document.getElementById("quiz-container");
-  container.innerHTML = "";
+  const questionEl = document.getElementById("question");
+  const answersEl = document.getElementById("answers");
+  const nextBtn = document.getElementById("next-btn");
 
   if (currentQuestionIndex < questions.length) {
     const q = questions[currentQuestionIndex];
 
-    // pick correct answer key (from backend correct_answers object)
+    // get correct answer key
     const correctKey = Object.keys(q.correct_answers).find(
       (k) => q.correct_answers[k] === "true"
     );
     q.correctAnswerKey = correctKey ? correctKey.replace("_correct", "") : null;
 
-    const div = document.createElement("div");
-    div.className = "quiz-question";
+    questionEl.textContent = `Q${currentQuestionIndex + 1}: ${q.question}`;
 
-    div.innerHTML = `
-      <h3>Q${currentQuestionIndex + 1}: ${q.question}</h3>
-      <ul>
-        ${Object.entries(q.answers)
-          .map(([key, value]) =>
-            value
-              ? `<li><label><input type="radio" name="answer" value="${key}"> ${value}</label></li>`
-              : ""
-          )
-          .join("")}
-      </ul>
-      <button onclick="nextQuestion()">Next</button>
-    `;
+    answersEl.innerHTML = Object.entries(q.answers)
+      .filter(([_, value]) => value)
+      .map(
+        ([key, value]) =>
+          `<li><label><input type="radio" name="answer" value="${key}"> ${value}</label></li>`
+      )
+      .join("");
 
-    container.appendChild(div);
+    nextBtn.style.display = "inline-block";
   } else {
     showResult();
   }
@@ -72,19 +65,22 @@ function nextQuestion() {
 }
 
 function showResult() {
-  const container = document.getElementById("quiz-container");
-  container.innerHTML = `
-    <h2>🎉 Quiz Completed!</h2>
-    <p>Your Score: ${score} / ${questions.length}</p>
-    <button onclick="restartQuiz()">Restart Quiz</button>
-  `;
+  document.getElementById("quiz-box").classList.add("hidden");
+  const resultBox = document.getElementById("result-box");
+  resultBox.classList.remove("hidden");
+  document.getElementById("score").textContent = `Your Score: ${score} / ${questions.length}`;
 }
 
 function restartQuiz() {
   currentQuestionIndex = 0;
   score = 0;
+  document.getElementById("quiz-box").classList.remove("hidden");
+  document.getElementById("result-box").classList.add("hidden");
   showQuestion();
 }
 
-// ✅ Load quiz when page loads
+// attach event listener to the Next button
+document.getElementById("next-btn").addEventListener("click", nextQuestion);
+
+// load quiz when page loads
 window.onload = loadQuiz;
