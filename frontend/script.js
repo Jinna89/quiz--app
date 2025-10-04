@@ -1,60 +1,86 @@
-let currentQuestion = 0;
+// ✅ Use your deployed Render backend
+const API_BASE_URL = "https://quiz-app-wbem.onrender.com"; 
+
+let currentQuestionIndex = 0;
+let questions = [];
 let score = 0;
-let quizData = [];
 
-async function fetchQuiz() {
-    try {
-        const response = await fetch('https://quiz-app-wbem.onrender.com/');
-        quizData = await response.json();
-        loadQuestion();
-    } catch (error) {
-        console.error("Error fetching quiz:", error);
+async function loadQuiz() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/quiz`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch quiz data");
     }
+    questions = await res.json();
+    showQuestion();
+  } catch (err) {
+    console.error("Error loading quiz:", err);
+    document.getElementById("quiz-container").innerHTML =
+      "<p>❌ Failed to load quiz. Please try again later.</p>";
+  }
 }
 
+function showQuestion() {
+  const container = document.getElementById("quiz-container");
+  container.innerHTML = "";
 
-function loadQuestion() {
-    if (currentQuestion >= quizData.length) {
-        document.getElementById('quiz-box').classList.add('hidden');
-        document.getElementById('result-box').classList.remove('hidden');
-        document.getElementById('score').innerText = `Your score: ${score}/${quizData.length}`;
-        return;
-    }
+  if (currentQuestionIndex < questions.length) {
+    const q = questions[currentQuestionIndex];
 
-    const question = quizData[currentQuestion];
-    document.getElementById('question').innerText = question.question;
+    const div = document.createElement("div");
+    div.className = "quiz-question";
 
-    const answersDiv = document.getElementById('answers');
-    answersDiv.innerHTML = '';
-    Object.entries(question.answers).forEach(([key, value]) => {
-        if (value) {
-            const btn = document.createElement('button');
-            btn.innerText = value;
-            btn.onclick = () => checkAnswer(key);
-            answersDiv.appendChild(btn);
-        }
-    });
+    div.innerHTML = `
+      <h3>Q${currentQuestionIndex + 1}: ${q.question}</h3>
+      <ul>
+        ${Object.entries(q.answers)
+          .map(([key, value]) =>
+            value
+              ? `<li><label><input type="radio" name="answer" value="${key}"> ${value}</label></li>`
+              : ""
+          )
+          .join("")}
+      </ul>
+      <button onclick="nextQuestion()">Next</button>
+    `;
+
+    container.appendChild(div);
+  } else {
+    showResult();
+  }
 }
 
-function checkAnswer(answer) {
-    if (answer === quizData[currentQuestion].correct) {
-        score++;
-    }
-    currentQuestion++;
-    loadQuestion();
+function nextQuestion() {
+  const selected = document.querySelector("input[name='answer']:checked");
+
+  if (!selected) {
+    alert("⚠️ Please select an answer!");
+    return;
+  }
+
+  const answer = selected.value;
+  if (questions[currentQuestionIndex].correct_answer === answer) {
+    score++;
+  }
+
+  currentQuestionIndex++;
+  showQuestion();
+}
+
+function showResult() {
+  const container = document.getElementById("quiz-container");
+  container.innerHTML = `
+    <h2>🎉 Quiz Completed!</h2>
+    <p>Your Score: ${score} / ${questions.length}</p>
+    <button onclick="restartQuiz()">Restart Quiz</button>
+  `;
 }
 
 function restartQuiz() {
-    currentQuestion = 0;
-    score = 0;
-    document.getElementById('result-box').classList.add('hidden');
-    document.getElementById('quiz-box').classList.remove('hidden');
-    loadQuestion();
+  currentQuestionIndex = 0;
+  score = 0;
+  showQuestion();
 }
 
-document.getElementById('next-btn').addEventListener('click', () => {
-    currentQuestion++;
-    loadQuestion();
-});
-
-fetchQuiz();
+// ✅ Load quiz when page loads
+window.onload = loadQuiz;
