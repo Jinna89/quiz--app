@@ -1,5 +1,5 @@
 // ✅ Use your deployed Render backend
-const API_BASE_URL = "https://quiz-app-wbem.onrender.com"; 
+const API_BASE_URL = "https://quiz-app-wbem.onrender.com";
 
 let currentQuestionIndex = 0;
 let questions = [];
@@ -8,9 +8,8 @@ let score = 0;
 async function loadQuiz() {
   try {
     const res = await fetch(`${API_BASE_URL}/api/quiz`);
-    if (!res.ok) {
-      throw new Error("Failed to fetch quiz data");
-    }
+    if (!res.ok) throw new Error("Failed to fetch quiz data");
+
     questions = await res.json();
     showQuestion();
   } catch (err) {
@@ -26,6 +25,12 @@ function showQuestion() {
 
   if (currentQuestionIndex < questions.length) {
     const q = questions[currentQuestionIndex];
+
+    // pick correct answer key (from backend correct_answers object)
+    const correctKey = Object.keys(q.correct_answers).find(
+      (k) => q.correct_answers[k] === "true"
+    );
+    q.correctAnswerKey = correctKey ? correctKey.replace("_correct", "") : null;
 
     const div = document.createElement("div");
     div.className = "quiz-question";
@@ -52,14 +57,13 @@ function showQuestion() {
 
 function nextQuestion() {
   const selected = document.querySelector("input[name='answer']:checked");
-
   if (!selected) {
     alert("⚠️ Please select an answer!");
     return;
   }
 
   const answer = selected.value;
-  if (questions[currentQuestionIndex].correct_answer === answer) {
+  if (questions[currentQuestionIndex].correctAnswerKey === answer) {
     score++;
   }
 
