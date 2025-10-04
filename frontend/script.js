@@ -4,7 +4,7 @@ let quizData = [];
 
 async function fetchQuiz() {
     try {
-        const response = await fetch('https://quiz-app-wbem.onrender.com');
+        const response = await fetch('https://quiz-app-wbem.onrender.com/');
         quizData = await response.json();
         loadQuestion();
     } catch (error) {
